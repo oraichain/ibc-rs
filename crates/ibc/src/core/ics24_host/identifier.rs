@@ -143,11 +143,7 @@ impl Display for ChainId {
 fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierError> {
     let (name, rev_number_str) = match chain_id_str.rsplit_once('-') {
         Some((name, rev_number_str)) => (name, rev_number_str),
-        None => {
-            return Err(IdentifierError::InvalidCharacter {
-                id: chain_id_str.to_string(),
-            })
-        }
+        None => (chain_id_str, "0"),
     };
 
     // Validates the chain name for allowed characters according to ICS-24.
@@ -526,7 +522,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_valid_chain_id() {
+    fn test_valid_chain_id_with_rev() {
         assert!(ChainId::from_str("chainA-0").is_ok());
         assert!(ChainId::from_str("chainA-1").is_ok());
         assert!(ChainId::from_str("chainA--1").is_ok());
@@ -534,14 +530,22 @@ mod tests {
     }
 
     #[test]
+    fn test_valid_chain_id_without_rev() {
+        assert!(ChainId::from_str("Oraichain").is_ok());
+        assert!(ChainId::from_str("chainA.2").is_ok());
+        assert!(ChainId::from_str("123").is_ok());
+        assert!(ChainId::from_str("chainA.01").is_ok());
+    }
+
+    #[test]
     fn test_invalid_chain_id() {
         assert!(ChainId::from_str("1").is_err());
         assert!(ChainId::from_str("-1").is_err());
         assert!(ChainId::from_str("   -1").is_err());
-        assert!(ChainId::from_str("chainA").is_err());
-        assert!(ChainId::from_str("chainA-").is_err());
-        assert!(ChainId::from_str("chainA-a").is_err());
-        assert!(ChainId::from_str("chainA-01").is_err());
+        assert!(ChainId::from_str(" chainA").is_err());
+        assert!(ChainId::from_str("chainA -").is_err());
+        assert!(ChainId::from_str("chainA.a").is_err());
+        assert!(ChainId::from_str("chainA.01").is_err());
         assert!(ChainId::from_str("/chainA-1").is_err());
         assert!(ChainId::from_str("chainA-1-").is_err());
     }
